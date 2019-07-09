@@ -11,7 +11,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License. 
+ * limitations under the License.
  */
 
 pragma solidity ^0.5.3;
@@ -62,7 +62,7 @@ library ArbMachine {
             byte hi = byte(uint8(b) / 16);
             byte lo = byte(uint8(b) - 16 * uint8(hi));
             s[i*2] = char(hi);
-            s[i*2+1] = char(lo);            
+            s[i*2+1] = char(lo);
         }
 
         out = string(s);
@@ -120,7 +120,7 @@ library ArbMachine {
             ArbValue.newIntValue(val).hash()
         );
     }
-    
+
     function machineHash(
         bytes32 instructionStackHash,
         bytes32 dataStackHash,
@@ -155,7 +155,7 @@ library ArbMachine {
                 machine.errHandler.hash
             ));
         }
-        
+
     }
 
     function clone(Machine memory machine) internal pure returns (Machine memory) {

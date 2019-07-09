@@ -11,7 +11,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License. 
+ * limitations under the License.
  */
 
 pragma solidity ^0.5.3;
@@ -871,14 +871,14 @@ library OneStepProof {
             } else {
                 endMachine.addDataStackValue(immediateVal);
             }
-            
+
             startMachine.instructionStackHash = ArbValue.HashOnlyValue(ArbValue.hashCodePointImmediateValue(
                 uint8(opCode),
                 immediateVal.hash().hash,
                 startMachine.instructionStackHash.hash
             ));
         }
-        
+
         uint i = 0;
         for (i = immediate; i < popCount; i++) {
             (valid, offset, stackVals[i]) = ArbValue.deserialize_value(_data.proof, offset);
@@ -1051,7 +1051,7 @@ library OneStepProof {
                 endMachine.instructionStackHash = endMachine.errHandler;
             }
         }
-        
+
         // require(_data.beforeHash == startMachine.hash(), string(abi.encodePacked("Proof had non matching start state: ", startMachine.toString())));
         require(_data.beforeHash == startMachine.hash(), "Proof had non matching start state");
         // require(_data.afterHash == endMachine.hash(), string(abi.encodePacked("Proof had non matching end state: ", endMachine.toString())));

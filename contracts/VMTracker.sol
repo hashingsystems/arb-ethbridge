@@ -11,7 +11,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License. 
+ * limitations under the License.
  */
 
 pragma solidity ^0.5.3;
@@ -37,11 +37,11 @@ contract VMTracker is Ownable {
     );
 
     event VMCreated(
-        uint32 _gracePeriod, 
+        uint32 _gracePeriod,
         uint128 _escrowRequired,
         address _escrowCurrency,
         uint32 _maxExecutionSteps,
-        bytes32 _vmId, 
+        bytes32 _vmId,
         bytes32 _vmState,
         uint16 _challengeManagerNum,
         address _owner,
@@ -444,7 +444,7 @@ contract VMTracker is Ownable {
         require(MerkleLib.generateAddressRoot(
             ArbProtocol.recoverAddresses(unanHash, _signatures)
         ) == vm.validatorRoot, "Validator signatures don't match");
-        
+
         if (vm.state == VMState.PendingUnanimous) {
             require(_sequenceNum > vm.sequenceNum);
         }
@@ -461,7 +461,7 @@ contract VMTracker is Ownable {
 
         _cancelCurrentState(vm);
         _resetDeadline(vm);
-        
+
         vm.state = VMState.PendingUnanimous;
         vm.sequenceNum = _sequenceNum;
         vm.disputableHash = keccak256(abi.encodePacked(
@@ -504,7 +504,7 @@ contract VMTracker is Ownable {
                 _messageDestination
             ))
         )));
-        
+
         vm.inboxHash = _newInbox;
         _acceptAssertion(
             _vmId,
@@ -757,7 +757,7 @@ contract VMTracker is Ownable {
             == vm.disputableHash,
             "Precondition and assertion do not match pending assertion"
         );
-        
+
         vm.validatorBalances[msg.sender] = vm.validatorBalances[msg.sender].sub(vm.escrowRequired);
         vm.disputableHash = 0;
         vm.state = VMState.Waiting;

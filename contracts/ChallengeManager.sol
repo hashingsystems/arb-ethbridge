@@ -11,7 +11,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License. 
+ * limitations under the License.
  */
 
 pragma solidity ^0.5.3;
@@ -59,7 +59,7 @@ contract ChallengeManager is IChallengeManager {
 	) external {
         require(msg.sender == address(vmTracker), "Challenge must be forwarded from main contract");
         require(challenges[_vmId].challengeState == 0x00, "There must be no existing challenge");
-        
+
         challenges[_vmId] = Challenge(
         	keccak256(abi.encodePacked(
 	        	_challengeRoot,
@@ -97,12 +97,12 @@ contract ChallengeManager is IChallengeManager {
         require(_tokenTypes.length == 0 || (_totalMessageAmounts.length % _tokenTypes.length == 0), "Incorrect input length");
     	require(
             _tokenTypes.length == 0 ||
-            ((_afterHashAndMessageAndLogsBisections.length - 1) / 3 == 
+            ((_afterHashAndMessageAndLogsBisections.length - 1) / 3 ==
             _totalMessageAmounts.length / _tokenTypes.length),
             "Incorrect input length"
         );
         require(_tokenTypes.length == _beforeBalances.length, "Incorrect input length");
-    	
+
         bytes32 fullHash;
         bytes32[] memory bisectionHashes;
         (fullHash, bisectionHashes) = generateBisectionDataImpl(BisectAssertionData(
@@ -229,7 +229,7 @@ contract ChallengeManager is IChallengeManager {
         address challenger,
         uint assertionIndex
     );
-    
+
     function continueChallenge(
         bytes32 _vmId,
         uint _assertionToChallenge,
@@ -268,7 +268,7 @@ contract ChallengeManager is IChallengeManager {
     );
 
     event OneStepProofDebug(bytes32 indexed vmId, bytes32[10] proofData);
-    
+
     function oneStepProof(
         bytes32 _vmId,
         bytes32[2] memory _beforeHashAndInbox,
@@ -305,7 +305,7 @@ contract ChallengeManager is IChallengeManager {
             ChallengeState.Challenged,
             _deadline
         )) == challenge.challengeState, "One step proof with invalid prev state");
-        
+
         uint correctProof = OneStepProof.validateProof(
             [
                 _beforeHashAndInbox[0],
@@ -345,9 +345,9 @@ contract ChallengeManager is IChallengeManager {
         	_deadline
         )) == challenge.challengeState, "Incorrect previous state");
         require(block.number > _deadline, "Deadline hasn't expired");
-        
+
         _challengerWin(_vmId, challenge);
-        
+
         emit TimedOutChallenge(_vmId, true);
     }
 
@@ -363,9 +363,9 @@ contract ChallengeManager is IChallengeManager {
         	_deadline
         )) == challenge.challengeState, "Incorrect previous state");
         require(block.number > _deadline, "Deadline hasn't expired");
-        
+
         _asserterWin(_vmId, challenge);
-        
+
         emit TimedOutChallenge(_vmId, false);
     }
 
@@ -379,7 +379,7 @@ contract ChallengeManager is IChallengeManager {
         	]
         );
     }
-    
+
     function _challengerWin(bytes32 _vmId, Challenge storage challenge) private {
         vmTracker.completeChallenge(
         	_vmId,

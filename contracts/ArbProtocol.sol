@@ -11,7 +11,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License. 
+ * limitations under the License.
  */
 
 pragma solidity ^0.5.3;
@@ -83,7 +83,7 @@ library ArbProtocol {
         values[3] = ArbValue.newIntValue(uint256(bytes32(_tokenType)));
         return ArbValue.newTupleValue(values).hash().hash;
     }
-    
+
     function generatePreconditionHash(
         bytes32 _beforeHash,
         uint64[2] memory _timeBounds,
@@ -92,7 +92,7 @@ library ArbProtocol {
         uint256[] memory _beforeBalances
     ) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(
-            _beforeHash, 
+            _beforeHash,
             _timeBounds[0],
             _timeBounds[1],
             _beforeInbox,
