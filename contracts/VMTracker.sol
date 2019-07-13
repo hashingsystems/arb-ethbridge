@@ -273,7 +273,7 @@ contract VMTracker is Ownable {
             _destination,
             _tokenType,
             _amount,
-            bytes32(bytes20(msg.sender)),
+            bytes32(uint256(uint160(msg.sender))),
             _data
         );
     }
@@ -284,7 +284,7 @@ contract VMTracker is Ownable {
             _destination,
             bytes21(0),
             msg.value,
-            bytes32(bytes20(msg.sender)),
+            bytes32(uint256(uint160(msg.sender))),
             _data
         );
     }
