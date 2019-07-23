@@ -351,8 +351,8 @@ contract VMTracker is Ownable {
     function unanimousAssert(
         bytes32 _vmId,
         bytes32 _afterHash,
-        bytes32 _newInbox,
         bytes32 _logsHash,
+        bytes32 _newInbox,
         uint64[2] memory _timeBounds,
         bytes21[] memory _tokenTypes,
         bytes memory _messageData,
