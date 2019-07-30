@@ -48,7 +48,7 @@ contract VMTracker is Ownable {
         address[] validators
     );
 
-    event ProposedUnanimousAssertion (
+    event PendingUnanimousAssertion (
         bytes32 indexed vmId,
         bytes32 unanHash,
         uint64 sequenceNum
@@ -59,7 +59,7 @@ contract VMTracker is Ownable {
         uint64 sequenceNum
     );
 
-    event FinalUnanimousAssertion(
+    event FinalizedUnanimousAssertion(
         bytes32 indexed vmId,
         bytes32 unanHash
     );
@@ -68,9 +68,8 @@ contract VMTracker is Ownable {
     // beforeHash
     // beforeInbox
     // afterHash
-    //
 
-    event DisputableAssertion (
+    event PendingDisputableAssertion (
         bytes32 indexed vmId,
         bytes32[3] fields,
         address asserter,
@@ -96,7 +95,7 @@ contract VMTracker is Ownable {
 
     struct VM {
         bytes32 machineHash;
-        bytes32 disputableHash; // Disputable assert only
+        bytes32 pendingHash; // Lock pending and confirm asserts together
         bytes32 inboxHash;
         bytes32 pendingMessages;
         bytes32 validatorRoot;
@@ -175,7 +174,7 @@ contract VMTracker is Ownable {
         }
 
         if (_afterHash == MACHINE_HALT_HASH) {
-            shutdownVMImpl(_vmId);
+            _shutdownVM(_vmId);
         }
     }
 
@@ -230,7 +229,7 @@ contract VMTracker is Ownable {
         vm.pendingMessages = ArbValue.hashEmptyTuple();
         vm.challengeManagersNum = _challengeManagerNum;
         vm.state = VMState.Waiting;
-        vm.disputableHash = 0;
+        vm.pendingHash = 0;
 
         // Validator options
         vm.validatorRoot = MerkleLib.generateAddressRoot(assertKeys);
@@ -258,7 +257,7 @@ contract VMTracker is Ownable {
         );
     }
 
-    function shutdownVMImpl(bytes32 _vmId) private {
+    function _shutdownVM(bytes32 _vmId) private {
         // TODO: transfer all owned funds to halt address
         delete vms[_vmId];
     }
@@ -266,7 +265,7 @@ contract VMTracker is Ownable {
     function ownerShutdown(bytes32 _vmId) external {
         VM storage vm = vms[_vmId];
         require(msg.sender == vm.owner, "Only owner can shutdown the VM");
-        shutdownVMImpl(_vmId);
+        _shutdownVM(_vmId);
     }
 
     function sendMessage(bytes32 _destination, bytes21 _tokenType, uint256 _amount, bytes memory _data) public {
@@ -335,7 +334,7 @@ contract VMTracker is Ownable {
         }
     }
 
-    struct unanimousAssertData {
+    struct finalizedUnanimousAssertData {
         bytes32 vmId;
         bytes32 afterHash;
         bytes32 newInbox;
@@ -349,7 +348,7 @@ contract VMTracker is Ownable {
         bytes signatures;
     }
 
-    function unanimousAssert(
+    function finalizedUnanimousAssert(
         bytes32 _vmId,
         bytes32 _afterHash,
         bytes32 _newInbox,
@@ -362,7 +361,7 @@ contract VMTracker is Ownable {
         bytes32 _logsAccHash,
         bytes memory _signatures
     ) public {
-        unanimousAssertImpl(unanimousAssertData(
+        _finalizedUnanimousAssert(finalizedUnanimousAssertData(
             _vmId,
             _afterHash,
             _newInbox,
@@ -377,13 +376,13 @@ contract VMTracker is Ownable {
         ));
     }
 
-    function unanimousAssertImpl(unanimousAssertData memory data) internal {
+    function _finalizedUnanimousAssert(finalizedUnanimousAssertData memory data) internal {
         VM storage vm = vms[data.vmId];
         require(vm.machineHash != MACHINE_HALT_HASH);
         require(withinTimeBounds(data.timeBounds), "Precondition: not within time bounds");
         bytes32 unanHash = keccak256(abi.encodePacked(
+            data.vmId,
             keccak256(abi.encodePacked(
-                data.vmId,
                 keccak256(abi.encodePacked(
                     data.newInbox,
                     data.afterHash,
@@ -416,13 +415,13 @@ contract VMTracker is Ownable {
             data.messageDestination
         );
 
-        emit FinalUnanimousAssertion(
+        emit FinalizedUnanimousAssertion(
             data.vmId,
             unanHash
         );
     }
 
-    function proposeUnanimousAssert(
+    function pendingUnanimousAssert(
         bytes32 _vmId,
         bytes32 _unanRest,
         uint64[2] memory _timeBounds,
@@ -437,8 +436,8 @@ contract VMTracker is Ownable {
         require(withinTimeBounds(_timeBounds), "Precondition: not within time bounds");
         require(vm.machineHash != MACHINE_HALT_HASH);
         bytes32 unanHash = keccak256(abi.encodePacked(
+            _vmId,
             keccak256(abi.encodePacked(
-                _vmId,
                 _unanRest,
                 _timeBounds,
                 vm.machineHash,
@@ -473,14 +472,14 @@ contract VMTracker is Ownable {
 
         vm.state = VMState.PendingUnanimous;
         vm.sequenceNum = _sequenceNum;
-        vm.disputableHash = keccak256(abi.encodePacked(
+        vm.pendingHash = keccak256(abi.encodePacked(
             _tokenTypes,
             _messageTokenNum,
             _messageAmount,
             _unanRest
         ));
 
-        emit ProposedUnanimousAssertion(
+        emit PendingUnanimousAssertion(
             _vmId,
             unanHash,
             _sequenceNum
@@ -500,7 +499,7 @@ contract VMTracker is Ownable {
         VM storage vm = vms[_vmId];
         require(vm.state == VMState.PendingUnanimous);
         require(block.number > vm.deadline);
-        require(vm.disputableHash == keccak256(abi.encodePacked(
+        require(vm.pendingHash == keccak256(abi.encodePacked(
             _tokenTypes,
             _messageTokenNum,
             _messageAmount,
@@ -529,7 +528,20 @@ contract VMTracker is Ownable {
         );
     }
 
-
+    struct PendingDisputableAssertData {
+        bytes32 vmId;
+        bytes32 beforeHash;
+        bytes32 beforeInbox;
+        bytes32 afterHash;
+        bytes32 logsAccHash;
+        uint32 numSteps;
+        uint64[2] timeBounds;
+        bytes21[] tokenTypes;
+        bytes32[] messageDataHash;
+        uint16[] messageTokenNum;
+        uint256[] msgAmount;
+        bytes32[] msgDestination;
+    }
 
     // fields:
     // _vmId
@@ -538,7 +550,7 @@ contract VMTracker is Ownable {
     // _afterHash
     // _logsAccHash
 
-    function disputableAssert(
+    function pendingDisputableAssert(
         bytes32[5] memory _fields,
         uint32 _numSteps,
         uint64[2] memory timeBounds,
@@ -548,7 +560,7 @@ contract VMTracker is Ownable {
         uint256[] memory _msgAmount,
         bytes32[] memory _msgDestination
     ) public {
-        return disputableAssertImpl(DisputableAssertData(
+        return _pendingDisputableAssert(PendingDisputableAssertData(
             _fields[0],
             _fields[1],
             _fields[2],
@@ -564,22 +576,7 @@ contract VMTracker is Ownable {
         ));
     }
 
-    struct DisputableAssertData {
-        bytes32 vmId;
-        bytes32 beforeHash;
-        bytes32 beforeInbox;
-        bytes32 afterHash;
-        bytes32 logsAccHash;
-        uint32 numSteps;
-        uint64[2] timeBounds;
-        bytes21[] tokenTypes;
-        bytes32[] messageDataHash;
-        uint16[] messageTokenNum;
-        uint256[] msgAmount;
-        bytes32[] msgDestination;
-    }
-
-    function disputableAssertImpl(DisputableAssertData memory _data) internal {
+    function _pendingDisputableAssert(PendingDisputableAssertData memory _data) internal {
         VM storage vm = vms[_data.vmId];
         require(vm.state == VMState.Waiting, "Can only disputable assert from waiting state");
         require(vm.machineHash != MACHINE_HALT_HASH && vm.machineHash != MACHINE_ERROR_HASH);
@@ -614,7 +611,7 @@ contract VMTracker is Ownable {
             _data.msgDestination
         );
 
-        vm.disputableHash = keccak256(abi.encodePacked(
+        vm.pendingHash = keccak256(abi.encodePacked(
             ArbProtocol.generatePreconditionHash(
                 _data.beforeHash,
                 _data.timeBounds,
@@ -636,7 +633,7 @@ contract VMTracker is Ownable {
         vm.disputableAsserter = msg.sender;
         vm.state = VMState.PendingAssertion;
 
-        emit DisputableAssertion(
+        emit PendingDisputableAssertion(
             _data.vmId,
             [_data.beforeHash, _data.beforeInbox, _data.afterHash],
             msg.sender,
@@ -680,7 +677,7 @@ contract VMTracker is Ownable {
         bytes32[] memory _messageDestination,
         bytes32 _logsAccHash
     ) public {
-        return confirmDisputableAssertedImpl(confirmDisputableAssertedData(
+        return _confirmDisputableAsserted(confirmDisputableAssertedData(
             _vmId,
             _preconditionHash,
             _afterHash,
@@ -694,7 +691,7 @@ contract VMTracker is Ownable {
         ));
     }
 
-    function confirmDisputableAssertedImpl(confirmDisputableAssertedData memory _data) internal {
+    function _confirmDisputableAsserted(confirmDisputableAssertedData memory _data) internal {
         VM storage vm = vms[_data.vmId];
         require(vm.state == VMState.PendingAssertion, "VM does not have assertion pending");
         require(block.number > vm.deadline, "Assertion is still pending challenge");
@@ -720,7 +717,7 @@ contract VMTracker is Ownable {
                         _data.messageAmounts
                     )
                 )
-            )) == vm.disputableHash,
+            )) == vm.pendingHash,
             "Precondition and assertion do not match pending assertion"
         );
         vm.validatorBalances[vm.disputableAsserter] = vm.validatorBalances[vm.disputableAsserter].add(vm.escrowRequired);
@@ -762,12 +759,12 @@ contract VMTracker is Ownable {
 
         require(
             _assertPreHash
-            == vm.disputableHash,
+            == vm.pendingHash,
             "Precondition and assertion do not match pending assertion"
         );
 
         vm.validatorBalances[msg.sender] = vm.validatorBalances[msg.sender].sub(vm.escrowRequired);
-        vm.disputableHash = 0;
+        vm.pendingHash = 0;
         vm.state = VMState.Waiting;
         vm.inChallenge = true;
 
