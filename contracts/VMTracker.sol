@@ -82,7 +82,7 @@ contract VMTracker is Ownable {
         uint256[] amounts
     );
 
-    event ConfirmedAssertion(
+    event ConfirmedDisputableAssertion(
         bytes32 indexed vmId,
         bytes32 newState,
         bytes32 logsAccHash
@@ -655,7 +655,7 @@ contract VMTracker is Ownable {
     // _afterHash
     // _logsAccHash
 
-    struct confirmAssertedData{
+    struct confirmDisputableAssertedData{
         bytes32 vmId;
         bytes32 preconditionHash;
         bytes32 afterHash;
@@ -668,7 +668,7 @@ contract VMTracker is Ownable {
         bytes32 logsAccHash;
     }
 
-    function confirmAsserted(
+    function confirmDisputableAsserted(
         bytes32 _vmId,
         bytes32 _preconditionHash,
         bytes32 _afterHash,
@@ -680,7 +680,7 @@ contract VMTracker is Ownable {
         bytes32[] memory _messageDestination,
         bytes32 _logsAccHash
     ) public {
-        return confirmAssertedImpl(confirmAssertedData(
+        return confirmDisputableAssertedImpl(confirmDisputableAssertedData(
             _vmId,
             _preconditionHash,
             _afterHash,
@@ -694,7 +694,7 @@ contract VMTracker is Ownable {
         ));
     }
 
-    function confirmAssertedImpl(confirmAssertedData memory _data) internal {
+    function confirmDisputableAssertedImpl(confirmDisputableAssertedData memory _data) internal {
         VM storage vm = vms[_data.vmId];
         require(vm.state == VMState.PendingAssertion, "VM does not have assertion pending");
         require(block.number > vm.deadline, "Assertion is still pending challenge");
@@ -734,7 +734,7 @@ contract VMTracker is Ownable {
             _data.messageDestination
         );
 
-        emit ConfirmedAssertion(
+        emit ConfirmedDisputableAssertion(
             _data.vmId,
             _data.afterHash,
             _data.logsAccHash
