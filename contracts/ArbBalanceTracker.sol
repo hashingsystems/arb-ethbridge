@@ -214,6 +214,16 @@ contract ArbBalanceTracker is Ownable, ERC20 {
         }
     }
 
+    function getTokenBalance(bytes32 _user, address _tokenContract) external view returns (uint256) {
+        Wallet storage wallet = wallets[_user];
+        uint walletIndex = wallet.tokenIndex[_tokenContract];
+        if (walletIndex == 0) {
+            return 0;
+        }
+        TokenWallet storage tokenWallet = wallet.tokenList[walletIndex - 1];
+        return tokenWallet.balance;
+    }
+
     function getTokenBalances(bytes32 _owner) external view returns (address[] memory, uint256[] memory) {
         Wallet storage wallet = wallets[_owner];
         address[] memory addresses = new address[](wallet.tokenList.length);
